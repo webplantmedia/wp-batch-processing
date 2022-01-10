@@ -1,4 +1,5 @@
 <?php
+
 /********************************************************************
  * Copyright (C) 2019 Darko Gjorgjijoski (https://darkog.com)
  *
@@ -18,11 +19,12 @@
  * along with WP Batch Processing. If not, see <https://www.gnu.org/licenses/>.
  **********************************************************************/
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Direct access is not allowed.' );
+if (!defined('ABSPATH')) {
+	die('Direct access is not allowed.');
 }
 
-trait WP_BP_Singleton {
+trait WP_BP_Singleton
+{
 	/**
 	 * The current instance
 	 */
@@ -31,8 +33,9 @@ trait WP_BP_Singleton {
 	/**
 	 * Returns the current instance
 	 */
-	final public static function get_instance() {
-		return isset( static::$instance )
+	final public static function get_instance()
+	{
+		return isset(static::$instance)
 			? static::$instance
 			: static::$instance = new static;
 	}
@@ -40,17 +43,22 @@ trait WP_BP_Singleton {
 	/**
 	 * WP_BP_Singleton constructor.
 	 */
-	final private function __construct() {
+	final private function __construct()
+	{
 		$this->init();
 	}
 
 	// Prevent instances
-	protected function init() {
+	protected function init()
+	{
 	}
 
-	final private function __wakeup() {
+	final public function __wakeup()
+	{
 	}
 
-	final private function __clone() {
+	final private function __clone()
+	{
 	}
 }
+

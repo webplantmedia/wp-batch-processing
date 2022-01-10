@@ -1,4 +1,5 @@
 <?php
+
 /********************************************************************
  * Copyright (C) 2019 Darko Gjorgjijoski (https://darkog.com)
  *
@@ -18,8 +19,8 @@
  * along with WP Batch Processing. If not, see <https://www.gnu.org/licenses/>.
  **********************************************************************/
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Direct access is not allowed.' );
+if (!defined('ABSPATH')) {
+	die('Direct access is not allowed.');
 }
 
 /**
@@ -32,7 +33,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * eg. WP_Batch_Processor::get_instance()->register( $batch );
  */
-abstract class WP_Batch {
+abstract class WP_Batch
+{
 
 	/**
 	 * Unique identifier of each batch
@@ -55,7 +57,8 @@ abstract class WP_Batch {
 	/**
 	 * Initialize
 	 */
-	public function __construct() {
+	public function __construct()
+	{
 		$this->setup();
 	}
 
@@ -80,22 +83,25 @@ abstract class WP_Batch {
 	 *
 	 * @return bool|\WP_Error
 	 */
-	abstract public function process( $item );
+	abstract public function process($item);
 
 	/**
 	 * Called when specific process is finished (all items were processed).
 	 * This method can be overriden in the process class.
 	 * @return void
 	 */
-	public function finish() {}
+	public function finish()
+	{
+	}
 
 	/**
 	 * Queues the item for processing.
 	 *
 	 * @param WP_Batch_Item $item
 	 */
-	protected function push( $item ) {
-		if ( ! is_array( $this->items ) ) {
+	protected function push($item)
+	{
+		if (!is_array($this->items)) {
 			$this->items = array();
 		}
 		$this->items[] = $item;
@@ -109,10 +115,11 @@ abstract class WP_Batch {
 	 *
 	 * @return bool|WP_Batch_Item
 	 */
-	public function get_next_item() {
+	public function get_next_item()
+	{
 		$processed = $this->get_processed_items();
-		foreach ( $this->items as $item ) {
-			if ( ! in_array( $item->id, $processed ) ) {
+		foreach ($this->items as $item) {
+			if (!in_array($item->id, $processed)) {
 				return $item;
 			}
 		}
@@ -124,10 +131,11 @@ abstract class WP_Batch {
 	 * Check if the batch is finished.
 	 * @return bool
 	 */
-	public function is_finished() {
+	public function is_finished()
+	{
 		$is_finished = true;
-		foreach ( $this->items as $item ) {
-			if ( ! $this->is_processed( $item ) ) {
+		foreach ($this->items as $item) {
+			if (!$this->is_processed($item)) {
 				$is_finished = false;
 			}
 		}
@@ -143,26 +151,39 @@ abstract class WP_Batch {
 	 *
 	 * @return bool
 	 */
-	public function is_processed( $item ) {
-		return in_array( $item->id, $this->get_processed_items() );
+	public function is_processed($item)
+	{
+		return in_array($item->id, $this->get_processed_items());
 	}
 
 	/**
 	 * Returns processed batch item ids
 	 * @return array
 	 */
-	public function get_processed_items() {
-		$processed = get_option( $this->get_db_identifier(), array() );
+	public function get_processed_items()
+	{
+		global $wpdb;
+		$row = $wpdb->get_row($wpdb->prepare("SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", $this->get_db_identifier()));
+		if (is_object($row)) {
+			$value = unserialize($row->option_value);
+			return $value;
+		}
 
-		return $processed;
+		return array();
+
+
+		// $processed = get_option($this->get_db_identifier(), array());
+
+		// return $processed;
 	}
 
 	/**
 	 * Returns the count of the processed items
 	 * @return int
 	 */
-	public function get_processed_count() {
-		return count( $this->get_processed_items() );
+	public function get_processed_count()
+	{
+		return count($this->get_processed_items());
 	}
 
 	/**
@@ -170,46 +191,50 @@ abstract class WP_Batch {
 	 *
 	 * @param int $id
 	 */
-	public function mark_as_processed( $id ) {
+	public function mark_as_processed($id)
+	{
 		$processed = $this->get_processed_items();
-		array_push( $processed, $id );
-		$processed = array_unique( $processed );
-		update_option( $this->get_db_identifier(), $processed );
+		array_push($processed, $id);
+		$processed = array_unique($processed);
+		update_option($this->get_db_identifier(), $processed);
 	}
 
 	/**
 	 * Returns the count of the total items
 	 * @return int
 	 */
-	public function get_items_count() {
-		return count( $this->items );
+	public function get_items_count()
+	{
+		return count($this->items);
 	}
 
 	/**
 	 * Returns the percentage
 	 * @return float
 	 */
-	public function get_percentage() {
+	public function get_percentage()
+	{
 		$total_items     = $this->get_items_count();
 		$total_processed = $this->get_processed_count();
-		$percentage      = ( ! empty( $total_items ) ) ? 100 - ( ( ( $total_items - $total_processed ) / $total_items ) * 100 ) : 0;
+		$percentage      = (!empty($total_items)) ? 100 - ((($total_items - $total_processed) / $total_items) * 100) : 0;
 
-		return number_format( (float) $percentage, 2, '.', '' );
+		return number_format((float) $percentage, 2, '.', '');
 	}
 
 	/**
 	 * Returns the batch wp_options option_name identifier.
 	 * @return string
 	 */
-	public function get_db_identifier() {
+	public function get_db_identifier()
+	{
 		return 'batch_' . $this->id . '_processed';
 	}
 
 	/**
 	 * Restarts the processed items store
 	 */
-	public function restart() {
-		delete_option( $this->get_db_identifier() );
+	public function restart()
+	{
+		delete_option($this->get_db_identifier());
 	}
-
 }

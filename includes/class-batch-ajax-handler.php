@@ -1,4 +1,5 @@
 <?php
+
 /********************************************************************
  * Copyright (C) 2019 Darko Gjorgjijoski (https://darkog.com)
  *
@@ -18,97 +19,103 @@
  * along with WP Batch Processing. If not, see <https://www.gnu.org/licenses/>.
  **********************************************************************/
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Direct access is not allowed.' );
+if (!defined('ABSPATH')) {
+	die('Direct access is not allowed.');
 }
 
 /**
  * Class WP_Batch_Processing_Ajax_Handler
  */
-class WP_Batch_Processing_Ajax_Handler {
+class WP_Batch_Processing_Ajax_Handler
+{
 
 	use WP_BP_Singleton;
 
 	/**
 	 * Setup the ajax endpoints
 	 */
-	protected function init() {
-		add_action( 'wp_ajax_dg_process_next_batch_item', array( $this, 'process_next_item' ) );
-		add_action( 'wp_ajax_dg_restart_batch', array( $this, 'restart_batch' ) );
+	protected function init()
+	{
+		add_action('wp_ajax_dg_process_next_batch_item', array($this, 'process_next_item'));
+		add_action('wp_ajax_dg_restart_batch', array($this, 'restart_batch'));
 	}
 
 	/**
 	 * This is used to handle the processing of each item
 	 * and return the status to inform the user.
 	 */
-	public function process_next_item() {
+	public function process_next_item()
+	{
 
 		// Check ajax referrer
-		if ( ! check_ajax_referer( WP_Batch_Processor_Admin::NONCE, 'nonce', false ) ) {
-			wp_send_json_error( array(
+		if (!check_ajax_referer(WP_Batch_Processor_Admin::NONCE, 'nonce', false)) {
+			wp_send_json_error(array(
 				'message' => 'Permission denied.',
-			) );
+			));
 			exit();
 		}
 
 		// Validate the batch id.
-		$batch_id = isset( $_REQUEST['batch_id'] ) ? $_REQUEST['batch_id'] : false;
-		if ( ! $batch_id ) {
-			wp_send_json_error( array(
+		$batch_id = isset($_REQUEST['batch_id']) ? $_REQUEST['batch_id'] : false;
+		if (!$batch_id) {
+			wp_send_json_error(array(
 				'message' => 'Invalid batch id',
-			) );
+			));
 			exit();
 		}
 
 		// Get the batch object
-		$batch = WP_Batch_Processor::get_instance()->get_batch( $batch_id );
+		$batch = WP_Batch_Processor::get_instance()->get_batch($batch_id);
 
 		// Process the next item.
 		$next_item = $batch->get_next_item();
 
 		// No next item for processing. The batch processing is finished, probably.
-		$is_finished = ( false === $next_item );
+		$is_finished = (false === $next_item);
 
-		if ( $is_finished ) {
+		if ($is_finished) {
 			$total_processed = $batch->get_processed_count();
 			$total_items     = $batch->get_items_count();
 			$percentage      = $batch->get_percentage();
 			$batch->finish();
-			wp_send_json_success( array(
-				'message'         => apply_filters( 'dg_batch_item_error_message', __( 'Processing finished.', 'wp-batch-processing' ) ),
+			wp_send_json_success(array(
+				'message'         => apply_filters('dg_batch_item_error_message', __('Processing finished.', 'wp-batch-processing')),
 				'is_finished'     => 1,
 				'total_processed' => $total_processed,
 				'total_items'     => $total_items,
+				'next_item'     => $next_item,
 				'percentage'      => $percentage,
-			) );
+			));
 		} else {
-			@set_time_limit( 0 );
-			$response = $batch->process( $next_item );
-			$batch->mark_as_processed( $next_item->id );
+			@set_time_limit(0);
+			$response = $batch->process($next_item);
+			$batch->mark_as_processed($next_item->id);
 			$total_processed = $batch->get_processed_count();
 			$total_items     = $batch->get_items_count();
 			$percentage      = $batch->get_percentage();
-			if ( is_wp_error( $response ) ) {
-				$error_message = apply_filters( 'dg_batch_item_error_message', 'Error processing item with id ' . $next_item->id . ': ' . $response->get_error_message(), $next_item );
-				wp_send_json_error( array(
+			if (is_wp_error($response)) {
+				$error_message = apply_filters('dg_batch_item_error_message', 'Error processing item with id ' . $next_item->id . ': ' . $response->get_error_message(), $next_item);
+				wp_send_json_error(array(
 					'message'         => $error_message,
 					'is_finished'     => 0,
 					'total_processed' => $total_processed,
 					'total_items'     => $total_items,
+					'next_item'     => $next_item,
 					'percentage'      => $percentage,
-				) );
+				));
 			} else {
-				$success_message = apply_filters( 'dg_batch_item_success_message', 'Processed item with id ' . $next_item->id, $next_item );
-				wp_send_json_success( array(
+				$success_message = apply_filters('dg_batch_item_success_message', 'Processed item with id ' . $next_item->id, $next_item);
+				wp_send_json_success(array(
 					'message'         => $success_message,
 					'is_finished'     => 0,
 					'total_processed' => $total_processed,
 					'total_items'     => $total_items,
+					'next_item'     => $next_item,
+					'batch_id'     => $batch_id,
 					'percentage'      => $percentage,
-				) );
+				));
 			}
 			exit;
-
 		}
 	}
 
@@ -116,28 +123,28 @@ class WP_Batch_Processing_Ajax_Handler {
 	 * Used to restart the batch.
 	 * Just clear the data.
 	 */
-	public function restart_batch() {
+	public function restart_batch()
+	{
 		// Check ajax referrer
-		if ( ! check_ajax_referer( WP_Batch_Processor_Admin::NONCE, 'nonce', false ) ) {
-			wp_send_json_error( array(
+		if (!check_ajax_referer(WP_Batch_Processor_Admin::NONCE, 'nonce', false)) {
+			wp_send_json_error(array(
 				'message' => 'Permission denied.',
-			) );
+			));
 			exit;
 		}
 		// Validate the batch id.
-		$batch_id = isset( $_REQUEST['batch_id'] ) ? $_REQUEST['batch_id'] : false;
-		if ( ! $batch_id ) {
-			wp_send_json_error( array(
+		$batch_id = isset($_REQUEST['batch_id']) ? $_REQUEST['batch_id'] : false;
+		if (!$batch_id) {
+			wp_send_json_error(array(
 				'message' => 'Invalid batch id',
-			) );
+			));
 			exit;
 		}
 		// Get the batch object
-		$batch = WP_Batch_Processor::get_instance()->get_batch( $batch_id );
+		$batch = WP_Batch_Processor::get_instance()->get_batch($batch_id);
 		// Restart the batch.
 		$batch->restart();
 		// Send json
 		wp_send_json_success();
 	}
 }
-
