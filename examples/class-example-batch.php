@@ -1,4 +1,5 @@
 <?php
+
 /********************************************************************
  * Copyright (C) 2019 Darko Gjorgjijoski (https://darkog.com)
  *
@@ -18,16 +19,17 @@
  * along with WP Batch Processing. If not, see <https://www.gnu.org/licenses/>.
  **********************************************************************/
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Direct access is not allowed.' );
+if (!defined('ABSPATH')) {
+	die('Direct access is not allowed.');
 }
 
-if ( class_exists( 'WP_Batch' ) ) {
+if (class_exists('WP_Batch')) {
 
 	/**
 	 * Class MY_Example_Batch
 	 */
-	class MY_Example_Batch extends WP_Batch {
+	class MY_Example_Batch extends WP_Batch
+	{
 
 		/**
 		 * Unique identifier of each batch
@@ -48,15 +50,16 @@ if ( class_exists( 'WP_Batch' ) ) {
 		 *
 		 * @return void
 		 */
-		public function setup() {
+		public function setup()
+		{
 
-			$users = get_users( array(
+			$users = get_users(array(
 				'number' => '40',
 				'role'   => 'author',
-			) );
+			));
 
-			foreach ( $users as $user ) {
-				$this->push( new WP_Batch_Item( $user->ID, array( 'author_id' => $user->ID ) ) );
+			foreach ($users as $user) {
+				$this->push(new WP_Batch_Item($user->ID, array('author_id' => $user->ID)));
 			}
 		}
 
@@ -72,14 +75,15 @@ if ( class_exists( 'WP_Batch' ) ) {
 		 *
 		 * @return bool|\WP_Error
 		 */
-		public function process( $item ) {
+		public function process($item)
+		{
 
 			// Retrieve the custom data
-			$author_id = $item->get_value( 'author_id' );
+			$author_id = $item->get_value('author_id');
 
 			// Return WP_Error if the item processing failed (In our case we simply skip author with user id 5)
-			if ( $author_id == 5 ) {
-				return new WP_Error( 302, "Author skipped" );
+			if ($author_id == 5) {
+				return new WP_Error(302, "Author skipped");
 			}
 
 			// Do the expensive processing here. eg. Sending email.
@@ -94,22 +98,21 @@ if ( class_exists( 'WP_Batch' ) ) {
 		 * This method can be overriden in the process class.
 		 * @return void
 		 */
-		public function finish() {
+		public function finish()
+		{
 			// Do something after process is finished.
 			// You have $this->items, or other data you can set.
 		}
-
 	}
 
 	/**
 	 * Initialize the batches.
 	 */
-	function wp_batch_processing_init() {
+	function wp_batch_processing_init()
+	{
 		$batch = new MY_Example_Batch();
-		WP_Batch_Processor::get_instance()->register( $batch );
+		WP_Batch_Processor::get_instance()->register($batch);
 	}
 
-	add_action( 'wp_batch_processing_init', 'wp_batch_processing_init', 15, 1 );
+	add_action('wp_batch_processing_init', 'wp_batch_processing_init', 15, 1);
 }
-
-

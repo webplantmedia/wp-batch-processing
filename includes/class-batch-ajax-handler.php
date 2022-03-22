@@ -69,6 +69,7 @@ class WP_Batch_Processing_Ajax_Handler
 
 		// Process the next item.
 		$next_item = $batch->get_next_item();
+		$batch->mark_as_processed($next_item->id);
 
 		// No next item for processing. The batch processing is finished, probably.
 		$is_finished = (false === $next_item);
@@ -96,7 +97,7 @@ class WP_Batch_Processing_Ajax_Handler
 			if (is_wp_error($response)) {
 				$error_message = apply_filters('dg_batch_item_error_message', 'Error processing item with id ' . $next_item->id . ': ' . $response->get_error_message(), $next_item);
 				wp_send_json_error(array(
-					'message'         => $error_message,
+					'message'         => $error_message . " - " . serialize($batch),
 					'is_finished'     => 0,
 					'total_processed' => $total_processed,
 					'total_items'     => $total_items,
@@ -105,8 +106,8 @@ class WP_Batch_Processing_Ajax_Handler
 				));
 			} else {
 				$success_message = apply_filters('dg_batch_item_success_message', 'Processed item with id ' . $next_item->id, $next_item);
-				wp_send_json_success(array(
-					'message'         => $success_message,
+				wp_send_json_error(array(
+					'message'         => $success_message . " - " . serialize($batch),
 					'is_finished'     => 0,
 					'total_processed' => $total_processed,
 					'total_items'     => $total_items,
