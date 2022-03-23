@@ -59,7 +59,7 @@ abstract class WP_Batch
 	 */
 	public function __construct()
 	{
-		$this->setup();
+		// $this->setup();
 	}
 
 	/**
@@ -118,6 +118,7 @@ abstract class WP_Batch
 	public function get_next_item()
 	{
 		$processed = $this->get_processed_items();
+		$this->items = $this->get_all_items();
 		foreach ($this->items as $item) {
 			if (!in_array($item->id, $processed)) {
 				return $item;
@@ -176,6 +177,17 @@ abstract class WP_Batch
 
 		// return $processed;
 	}
+	public function get_all_items()
+	{
+		global $wpdb;
+		$row = $wpdb->get_row($wpdb->prepare("SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", $this->get_db_identifier() . "_items"));
+		if (is_object($row)) {
+			$value = unserialize($row->option_value);
+			return $value;
+		}
+
+		return array();
+	}
 
 	/**
 	 * Returns the count of the processed items
@@ -205,6 +217,7 @@ abstract class WP_Batch
 	 */
 	public function get_items_count()
 	{
+		$this->items = $this->get_all_items();
 		return count($this->items);
 	}
 
@@ -235,6 +248,9 @@ abstract class WP_Batch
 	 */
 	public function restart()
 	{
+		$this->setup();
+		delete_option($this->get_db_identifier() . "_items");
+		update_option($this->get_db_identifier() . "_items", $this->items);
 		delete_option($this->get_db_identifier());
 	}
 }

@@ -1,4 +1,5 @@
 <?php
+
 /********************************************************************
  * Copyright (C) 2019 Darko Gjorgjijoski (https://darkog.com)
  *
@@ -18,15 +19,16 @@
  * along with WP Batch Processing. If not, see <https://www.gnu.org/licenses/>.
  **********************************************************************/
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Direct access is not allowed.' );
+if (!defined('ABSPATH')) {
+	die('Direct access is not allowed.');
 }
 
 
 /**
  * Class WP_Batch_Processor
  */
-class WP_Batch_Processor {
+class WP_Batch_Processor
+{
 
 	use WP_BP_Singleton;
 
@@ -39,7 +41,8 @@ class WP_Batch_Processor {
 	/**
 	 * Initializes the runner
 	 */
-	public function init() {
+	public function init()
+	{
 		$this->batches = array();
 	}
 
@@ -49,7 +52,8 @@ class WP_Batch_Processor {
 	 *
 	 * @param WP_Batch $batch
 	 */
-	public function register( $batch ) {
+	public function register($batch)
+	{
 		$this->batches[] = $batch;
 	}
 
@@ -57,7 +61,8 @@ class WP_Batch_Processor {
 	 * Returns array of registered batches
 	 * @return WP_Batch[]
 	 */
-	public function get_batches() {
+	public function get_batches()
+	{
 		return $this->batches;
 	}
 
@@ -68,9 +73,10 @@ class WP_Batch_Processor {
 	 *
 	 * @return null|WP_Batch
 	 */
-	public function get_batch( $id ) {
-		foreach ( $this->batches as $batch ) {
-			if ( $batch->id === $id ) {
+	public function get_batch($id)
+	{
+		foreach ($this->batches as $batch) {
+			if ($batch->id === $id) {
 				return $batch;
 			}
 		}
@@ -81,7 +87,8 @@ class WP_Batch_Processor {
 	/**
 	 * Boot the plugin
 	 */
-	public static function boot() {
+	public static function boot()
+	{
 		self::load_paths();
 		WP_Batch_Processor_Admin::get_instance();
 		WP_Batch_Processing_Ajax_Handler::get_instance();
@@ -93,19 +100,19 @@ class WP_Batch_Processor {
 	 * Note: This won't work if the library is outside of the wp-content directory
 	 * and also contains multiple 'wp-content' words in the path.
 	 */
-	private static function load_paths() {
-		if ( ! defined( 'WP_BP_PATH' ) || ! defined( 'WP_BP_URL' ) ) {
-			$path        = trailingslashit( dirname( dirname( __FILE__ ) ) );
-			$content_dir = basename( untrailingslashit( WP_CONTENT_DIR ) );
-			$library_uri = substr( strstr( trailingslashit( $path ), $content_dir ), strlen( $content_dir ) );
-			$url         = untrailingslashit( WP_CONTENT_URL ) . $library_uri;
-			if ( ! defined( 'WP_BP_PATH' ) ) {
-				define( 'WP_BP_PATH', $path );
+	private static function load_paths()
+	{
+		if (!defined('WP_BP_PATH') || !defined('WP_BP_URL')) {
+			$path        = trailingslashit(dirname(dirname(__FILE__)));
+			$content_dir = basename(untrailingslashit(WP_CONTENT_DIR));
+			$library_uri = substr(strstr(trailingslashit($path), $content_dir), strlen($content_dir));
+			$url         = untrailingslashit(WP_CONTENT_URL) . $library_uri;
+			if (!defined('WP_BP_PATH')) {
+				define('WP_BP_PATH', $path);
 			}
-			if ( ! defined( 'WP_BP_URL' ) ) {
-				define( 'WP_BP_URL', trailingslashit( $url ) );
+			if (!defined('WP_BP_URL')) {
+				define('WP_BP_URL', trailingslashit($url));
 			}
 		}
 	}
-
 }
