@@ -167,7 +167,9 @@ abstract class WP_Batch
 		$row = $wpdb->get_row($wpdb->prepare("SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", $this->get_db_identifier()));
 		if (is_object($row)) {
 			$value = unserialize($row->option_value);
-			return $value;
+			if (!empty($value) && is_array($value)) {
+				return $value;
+			}
 		}
 
 		return array();
@@ -205,10 +207,20 @@ abstract class WP_Batch
 	 */
 	public function mark_as_processed($id)
 	{
+		global $wpdb;
+
 		$processed = $this->get_processed_items();
 		array_push($processed, $id);
 		$processed = array_unique($processed);
-		update_option($this->get_db_identifier(), $processed);
+
+		$serialized_value = maybe_serialize($processed);
+		$update_args = array(
+			'option_value' => $serialized_value,
+			'autoload' => 'no'
+		);
+		$wpdb->update($wpdb->options, $update_args, array('option_name' => $this->get_db_identifier()));
+
+		// update_option($this->get_db_identifier(), $processed, "no");
 	}
 
 	/**
@@ -248,9 +260,21 @@ abstract class WP_Batch
 	 */
 	public function restart()
 	{
+		global $wpdb;
+
 		$this->setup();
-		delete_option($this->get_db_identifier() . "_items");
-		update_option($this->get_db_identifier() . "_items", $this->items);
-		delete_option($this->get_db_identifier());
+
+		$wpdb->delete($wpdb->options, array('option_name' => $this->get_db_identifier() . "_items"));
+		$wpdb->delete($wpdb->options, array('option_name' => $this->get_db_identifier()));
+
+		$serialized_value = maybe_serialize($this->items);
+		$wpdb->query($wpdb->prepare("INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s)", $this->get_db_identifier() . "_items", $serialized_value, "no"));
+
+		$wpdb->query($wpdb->prepare("INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s)", $this->get_db_identifier(), "", "no"));
+
+		// delete_option($this->get_db_identifier() . "_items");
+		// delete_option($this->get_db_identifier());
+		// update_option($this->get_db_identifier() . "_items", $this->items);
+		// update_option($this->get_db_identifier(), $this->items);
 	}
 }
